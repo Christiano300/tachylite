@@ -1,0 +1,17 @@
+<template>
+  <div>
+    <div v-if="data && data.html" v-html="data.html"></div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+const route = useRoute();
+
+const page = Array.isArray(route.params.slug) ? route.params.slug.join('/') : route.params.slug;
+
+const { data, error } = useFetch(`/api/content`, {query: {path: encodeURIComponent(`/${route.params.mount}/${page}`)}});
+</script>
+
+<style>
+
+</style>
