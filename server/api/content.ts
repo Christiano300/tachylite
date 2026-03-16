@@ -6,6 +6,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeStringify from "rehype-stringify";
 
+
 async function renderMarkdownToHtml(markdown: string): Promise<string> {
   const file = await unified()
     .use(remarkParse)
@@ -20,12 +21,8 @@ async function renderMarkdownToHtml(markdown: string): Promise<string> {
 }
 
 export default defineEventHandler(async (event) => {
-  const url = new URL(event.req.url, `http://hahaha`);
-  let path = decodeURIComponent(String(url.searchParams.get("path") || "/"));
-
-  if (path.startsWith("/")) {
-    path = path.slice(1);
-  }
+  const url = getRequestURL(event);
+  const path = decodeURIComponent(String(url.searchParams.get("path") || "/")).replace(/^\//, "");
 
   // Replace this with your WebDAV read logic.
   // Keeping content lookup here allows the renderer page to stay fully Vite-managed.

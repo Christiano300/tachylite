@@ -14,7 +14,7 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
-      '*/30 * * * * *': 'tl:fetchDav',
+      '*/15 * * * * *': 'tl:fetchDav',
     }
   }
 })

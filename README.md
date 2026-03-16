@@ -1,36 +1,75 @@
-# Nitro starter
+# Nuxt Minimal Starter
 
-Create your full-stack apps and deploy it anywhere with this [Vite](https://vite.dev/) + [Nitro](https://v3.nitro.build/) starter.
+Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
-## Getting started
+## Setup
+
+Make sure to install dependencies:
 
 ```bash
+# npm
 npm install
-npm run dev
+
+# pnpm
+pnpm install
+
+# yarn
+yarn install
+
+# bun
+bun install
 ```
 
-## Deploying
+## Development Server
+
+Start the development server on `http://localhost:3000`:
 
 ```bash
-npm run build
-npm run preview
+# npm
+npm run dev
+
+# pnpm
+pnpm dev
+
+# yarn
+yarn dev
+
+# bun
+bun run dev
 ```
 
-Then checkout the [Nitro documentation](https://v3.nitro.build/deploy) to learn more about the different deployment presets.
+## Production
 
-## Current Architecture (Nitro 3 + Vite)
+Build the application for production:
 
-- `index.html`: single renderer template with [rendu](https://github.com/h3js/rendu) conditionals — serves both the markdown viewer and the config page.
-- `app/main.ts`: client entry for the markdown page.
-- `app/config.ts`: client entry for the config page.
-- `app/assets/main.css`: shared styles for both pages.
-- `server/routes/api/content.ts`: server markdown rendering endpoint (replace placeholder source with WebDAV read logic).
+```bash
+# npm
+npm run build
 
-### Why this works
+# pnpm
+pnpm build
 
-Nitro's renderer catches all unmatched routes via `index.html`. The template uses rendu `<? if ?>` blocks to branch on `$URL.pathname`: `/config` serves the config UI, everything else does SSR markdown rendering. Both `<script type="module">` tags are present in the raw HTML so Vite discovers and bundles both client entries, but rendu only includes the relevant one at runtime.
+# yarn
+yarn build
 
-### Asset placement
+# bun
+bun run build
+```
 
-- Put static files that should be served directly in `public/`.
-- Put page scripts and styles that should be Vite-bundled in `app/` and reference them from HTML with `<script type="module" ...>`.
+Locally preview production build:
+
+```bash
+# npm
+npm run preview
+
+# pnpm
+pnpm preview
+
+# yarn
+yarn preview
+
+# bun
+bun run preview
+```
+
+Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

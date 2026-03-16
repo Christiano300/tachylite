@@ -1,12 +1,17 @@
 import { createClient, type SearchResult } from "webdav";
-import { MountConfig, MountedFile } from "~~/server/types";
+import { MountConfig, MountedFile, MOUNTS_CONFIG_STORAGE_KEY, MOUNTS_ENTRY_STORAGE_KEY_PREFIX } from "~~/server/types";
 
 function mapPath(path: string) {
   return path
-    .replace(/\.md$/, "")
-    .replace(/ /g, "_")
-    .toLowerCase()
-    .replace(/[^A-Za-z0-9]+/g, "-");
+    .split("/")
+    .map((part) =>
+      part
+        .replace(/\.md$/, "")
+        .replace(/ /g, "_")
+        .toLowerCase()
+        .replace(/[^A-Za-z0-9]+/g, "-"),
+    )
+    .join("/");
 }
 
 export default defineTask({
@@ -17,12 +22,7 @@ export default defineTask({
   run: async () => {
     const store = useStorage("mounts");
 
-    const mountsStr = (await store.getItem("tl:mounts")) ?? "";
-    if (typeof mountsStr !== "string") {
-      console.error("Invalid mounts configuration in storage");
-      return { result: null };
-    }
-    const mountConfig = (JSON.parse(mountsStr) || {}) as MountConfig;
+    const mountConfig = (await store.getItem(MOUNTS_CONFIG_STORAGE_KEY)) as MountConfig;
 
     const client = createClient(process.env.DAV_URL || "", {
       username: process.env.DAV_USERNAME || "",
@@ -71,15 +71,8 @@ export default defineTask({
           );
           return null;
         }
-        let path = file.filename.replace(baseURL, "");
-        if (!path.startsWith("/")) {
-          path = "/" + path;
-        }
-        let name = file.basename;
-        if (name.endsWith(".md")) {
-          name = name.substring(0, name.length - 3);
-        }
-
+        const path = file.filename.replace(baseURL, "").replace(/^\//, ""); // Remove base URL and leading slash
+        const name = file.basename.replace(/\.md$/, "");
         const url = mapPath(path);
 
         return {
@@ -90,18 +83,21 @@ export default defineTask({
       })
       .filter((x) => x !== null);
 
-    for (const [mountId, mount] of Object.entries(mountConfig)) {
-      const entries = {} as Record<string, MountedFile>;
-
-      for (const file of files) {
-        if (file.davPath.startsWith(mount.davPath)) {
-          const relativeUrl = file.url.replace(mapPath(mount.davPath), "");
-          entries[relativeUrl] = file;
+      console.log(files)
+      
+      for (const [mountId, mount] of Object.entries(mountConfig)) {
+        const entries = {} as Record<string, MountedFile>;
+        
+        for (const file of files) {
+          if (file.davPath.startsWith(mount.davPath)) {
+            const relativeUrl = file.url.replace(mapPath(mount.davPath), "").replace(/^\//, "");
+            entries[relativeUrl] = file;
+          }
+          
         }
-
-        store.setItem(`tl-mounts:${mountId}`, JSON.stringify(entries));
+        console.log(mountId, entries);
+        store.setItem(`${MOUNTS_ENTRY_STORAGE_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
       }
-    }
 
     return { result: null };
   },
