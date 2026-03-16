@@ -5,6 +5,8 @@ import remarkRehype from "remark-rehype";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeStringify from "rehype-stringify";
+import { createClient } from "webdav/dist/node/factory.js";
+import { MountedFile, MOUNTS_ENTRY_STORAGE_KEY_PREFIX } from "../types";
 
 
 async function renderMarkdownToHtml(markdown: string): Promise<string> {
@@ -21,14 +23,22 @@ async function renderMarkdownToHtml(markdown: string): Promise<string> {
 }
 
 export default defineEventHandler(async (event) => {
-  const url = getRequestURL(event);
-  const path = decodeURIComponent(String(url.searchParams.get("path") || "/")).replace(/^\//, "");
-
-  // Replace this with your WebDAV read logic.
-  // Keeping content lookup here allows the renderer page to stay fully Vite-managed.
-  const markdown = `# ${path === "/" ? "Home" : path}\n\nThis HTML is rendered on the server from markdown.`;
+  const query = getQuery(event);
+  const path = decodeURIComponent(query.path as string).replace(/^\//, "");
+  const mountId = query.mount as string;
+  const store = useStorage("mounts");
+  const mountEntries = await store.getItem(MOUNTS_ENTRY_STORAGE_KEY_PREFIX + mountId) as Record<string, MountedFile>;
+  if (!mountEntries || !mountEntries[path]) {
+    throw createError({ statusCode: 404, message: "File not found" });
+  }
+  const client = createClient(process.env.DAV_URL || "", {
+    username: process.env.DAV_USERNAME || "",
+    password: process.env.DAV_PASSWORD || "",
+  });
+  const url = `${process.env.FILES_URL}${mountEntries[path].davPath}`;
+  console.log(url);
+  const markdown = await client.getFileContents(url, { format: "text" }) as string;
   const html = await renderMarkdownToHtml(markdown);
-  console.log(html);
 
   return {
     path,

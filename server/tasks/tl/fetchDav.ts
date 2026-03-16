@@ -1,5 +1,10 @@
 import { createClient, type SearchResult } from "webdav";
-import { MountConfig, MountedFile, MOUNTS_CONFIG_STORAGE_KEY, MOUNTS_ENTRY_STORAGE_KEY_PREFIX } from "~~/server/types";
+import {
+  MountConfig,
+  MountedFile,
+  MOUNTS_CONFIG_STORAGE_KEY,
+  MOUNTS_ENTRY_STORAGE_KEY_PREFIX,
+} from "~~/server/types";
 
 function mapPath(path: string) {
   return path
@@ -12,6 +17,15 @@ function mapPath(path: string) {
         .replace(/[^A-Za-z0-9]+/g, "-"),
     )
     .join("/");
+}
+
+function writeToc(mountId: string, entries: Record<string, MountedFile>) {
+  void mountId;
+  void entries;
+  // do later
+  // const toc = {} as Record<string, any>;
+  // const store = useStorage("mounts");
+  // store.setItem(`${MOUNTS_TOC_STORAGE_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
 }
 
 export default defineTask({
@@ -83,21 +97,18 @@ export default defineTask({
       })
       .filter((x) => x !== null);
 
-      console.log(files)
-      
-      for (const [mountId, mount] of Object.entries(mountConfig)) {
-        const entries = {} as Record<string, MountedFile>;
-        
-        for (const file of files) {
-          if (file.davPath.startsWith(mount.davPath)) {
-            const relativeUrl = file.url.replace(mapPath(mount.davPath), "").replace(/^\//, "");
-            entries[relativeUrl] = file;
-          }
-          
+    for (const [mountId, mount] of Object.entries(mountConfig)) {
+      const entries = {} as Record<string, MountedFile>;
+
+      for (const file of files) {
+        if (file.davPath.startsWith(mount.davPath)) {
+          const relativeUrl = file.url.replace(mapPath(mount.davPath), "").replace(/^\//, "");
+          entries[relativeUrl] = file;
         }
-        console.log(mountId, entries);
-        store.setItem(`${MOUNTS_ENTRY_STORAGE_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
       }
+      writeToc(mountId, entries);
+      store.setItem(`${MOUNTS_ENTRY_STORAGE_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
+    }
 
     return { result: null };
   },

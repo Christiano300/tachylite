@@ -9,7 +9,7 @@ const route = useRoute();
 
 const page = Array.isArray(route.params.slug) ? route.params.slug.join('/') : route.params.slug;
 
-const { data, error } = useFetch(`/api/content`, {query: {path: encodeURIComponent(`/${route.params.mount}/${page}`)}});
+const { data, error } = useFetch(`/api/content`, {query: {path: encodeURIComponent(page as string), mount: route.params.mount}});
 </script>
 
 <style>

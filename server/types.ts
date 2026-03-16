@@ -19,3 +19,5 @@ export type MountedFile = {
 export const MOUNTS_CONFIG_STORAGE_KEY = "tl:mounts";
 
 export const MOUNTS_ENTRY_STORAGE_KEY_PREFIX = "tl-mounts:";
+
+export const MOUNTS_TOC_STORAGE_KEY_PREFIX = "tl-toc:";
