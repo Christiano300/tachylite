@@ -44,11 +44,17 @@ export default defineEventHandler(async (event) => {
 
 async function checkLastFetch() {
   const store = useStorage("mounts");
-  const lastFetch = (await store.getItem(LAST_FETCH_KEY)) as number;
+  const lastFetch = (await store.hasItem(LAST_FETCH_KEY))
+    ? ((await store.getItem(LAST_FETCH_KEY)) as number)
+    : null;
   const now = Date.now();
-  if (!lastFetch || now - lastFetch > 60 * 1000) {
+  if (!lastFetch || now - lastFetch > 20 * 1000) {
     store.setItem(LAST_FETCH_KEY, now);
-    await runTask("tl:fetchDav");
+    try {
+      await runTask("tl:fetchDav");
+    } catch (error) {
+      console.error("Error running fetchDav task:", error);
+    }
   }
 }
 

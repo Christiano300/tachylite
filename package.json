@@ -28,6 +28,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.98",
     "@nuxt/ui": "^4.5.1",
     "@tailwindcss/typography": "^0.5.19",
     "@types/mdast": "^4.0.4",

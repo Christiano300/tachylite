@@ -18,7 +18,9 @@ export default defineTask({
     console.log("Fetching WebDAV file tree...");
     const store = useStorage("mounts");
 
-    const mountConfig = (await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig;
+    const mountConfig = (await store.hasItem(MOUNTS_CONFIG_KEY))
+      ? ((await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig)
+      : {};
 
     const client = createClient(process.env.DAV_URL || "", {
       username: process.env.DAV_USERNAME || "",
@@ -53,6 +55,7 @@ export default defineTask({
 
     const fileInfos = (await client.search("/", { data: searchString })) as SearchResult;
     store.setItem(LAST_FETCH_KEY, Date.now());
+    console.log(`Found ${fileInfos.results.length} markdown files on WebDAV server`);
 
     const baseURL = process.env.BASE_URL || "";
     if (baseURL == "") {
@@ -139,4 +142,5 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
   }
   const store = useStorage("mounts");
   store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
+  console.log(`Wrote TOC for mount '${mountId}' with ${Object.keys(entries).length} entries`);
 }
