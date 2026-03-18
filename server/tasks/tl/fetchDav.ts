@@ -1,32 +1,13 @@
 import { createClient, type SearchResult } from "webdav";
 import {
+  LAST_FETCH_KEY,
   MountConfig,
   MountedFile,
-  MOUNTS_CONFIG_STORAGE_KEY,
-  MOUNTS_ENTRY_STORAGE_KEY_PREFIX,
-} from "~~/server/types";
-
-function mapPath(path: string) {
-  return path
-    .split("/")
-    .map((part) =>
-      part
-        .replace(/\.md$/, "")
-        .replace(/ /g, "_")
-        .toLowerCase()
-        .replace(/[^A-Za-z0-9]+/g, "-"),
-    )
-    .join("/");
-}
-
-function writeToc(mountId: string, entries: Record<string, MountedFile>) {
-  void mountId;
-  void entries;
-  // do later
-  // const toc = {} as Record<string, any>;
-  // const store = useStorage("mounts");
-  // store.setItem(`${MOUNTS_TOC_STORAGE_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
-}
+  MOUNTS_CONFIG_KEY,
+  MOUNTS_ENTRY_KEY_PREFIX,
+  MOUNTS_TOC_KEY_PREFIX,
+  TocTree,
+} from "~~/shared/types";
 
 export default defineTask({
   meta: {
@@ -34,9 +15,10 @@ export default defineTask({
     description: "Fetches the file tree from the WebDAV server and generates the mounts",
   },
   run: async () => {
+    console.log("Fetching WebDAV file tree...");
     const store = useStorage("mounts");
 
-    const mountConfig = (await store.getItem(MOUNTS_CONFIG_STORAGE_KEY)) as MountConfig;
+    const mountConfig = (await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig;
 
     const client = createClient(process.env.DAV_URL || "", {
       username: process.env.DAV_USERNAME || "",
@@ -70,6 +52,8 @@ export default defineTask({
     </d:searchrequest>`;
 
     const fileInfos = (await client.search("/", { data: searchString })) as SearchResult;
+    store.setItem(LAST_FETCH_KEY, Date.now());
+
     const baseURL = process.env.BASE_URL || "";
     if (baseURL == "") {
       console.warn(
@@ -77,7 +61,7 @@ export default defineTask({
       );
     }
 
-    const files: MountedFile[] = fileInfos.results
+    const files = fileInfos.results
       .map((file) => {
         if (!file.filename.startsWith(baseURL)) {
           console.warn(
@@ -87,12 +71,10 @@ export default defineTask({
         }
         const path = file.filename.replace(baseURL, "").replace(/^\//, ""); // Remove base URL and leading slash
         const name = file.basename.replace(/\.md$/, "");
-        const url = mapPath(path);
 
         return {
           displayName: name,
           davPath: path,
-          url,
         };
       })
       .filter((x) => x !== null);
@@ -102,14 +84,59 @@ export default defineTask({
 
       for (const file of files) {
         if (file.davPath.startsWith(mount.davPath)) {
-          const relativeUrl = file.url.replace(mapPath(mount.davPath), "").replace(/^\//, "");
-          entries[relativeUrl] = file;
+          const relativePath = file.davPath.replace(mount.davPath, "").replace(/^\//, "");
+          const relativeUrl = pathToUrl(relativePath);
+          entries[relativeUrl] = {
+            ...file,
+            relativePath,
+          };
         }
       }
       writeToc(mountId, entries);
-      store.setItem(`${MOUNTS_ENTRY_STORAGE_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
+      store.setItem(`${MOUNTS_ENTRY_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
     }
 
     return { result: null };
   },
 });
+
+function pathToUrl(path: string) {
+  return path
+    .split("/")
+    .map((part) =>
+      part
+        .replace(/\.md$/, "")
+        .replace(/ /g, "_")
+        .toLowerCase()
+        .replace(/[^A-Za-z0-9]+/g, "-"),
+    )
+    .join("/");
+}
+
+function writeToc(mountId: string, entries: Record<string, MountedFile>) {
+  const toc: TocTree[] = [];
+  for (const file of Object.values(entries)) {
+    const parts = file.relativePath.split("/").filter((x) => x !== "");
+    parts.pop();
+    let currentLevel = toc;
+    for (const part of parts) {
+      let nextLevel = currentLevel.find((x) => x.name === part);
+      if (!nextLevel) {
+        nextLevel = { name: part, url: "", children: [] };
+        currentLevel.push(nextLevel);
+      } else {
+        if (!nextLevel.children) {
+          nextLevel.children = [];
+        }
+      }
+      currentLevel = nextLevel.children;
+    }
+    currentLevel.push({
+      name: file.displayName,
+      url: `/md/${mountId}/${pathToUrl(file.relativePath)}`,
+      children: [],
+    });
+  }
+  const store = useStorage("mounts");
+  store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
+}

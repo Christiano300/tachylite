@@ -3,8 +3,8 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   ssr: false,
+
   nitro: {
-    preset: "vercel",
     storage: {
       mounts: {
         driver: "fs",
@@ -14,13 +14,8 @@ export default defineNuxtConfig({
     experimental: {
       tasks: true,
     },
-    scheduledTasks: {
-      "* * * * *": "tl:fetchDav",
-    },
-    vercel: {
-      config: {
-        crons: [{ schedule: "* * * * *", path: "/api/vercelCron/fetchDav" }],
-      },
-    },
   },
+
+  modules: ["@nuxt/ui"],
+  css: ["~/assets/css/main.css"],
 });

@@ -1,4 +1,4 @@
-import { mountConfigSchema } from "../types";
+import { mountConfigSchema } from "../../shared/types";
 
 const key = "tl:mounts";
 
@@ -7,18 +7,19 @@ export default eventHandler({
     if (event.method === "GET") {
       const storage = useStorage("mounts");
       const mounts = await storage.getItem(key);
-      console.log(mounts, !mounts)
+      console.log(mounts, !mounts);
       return mounts ?? {};
     } else if (event.method === "PUT") {
       const body = await readValidatedBody(event, mountConfigSchema.parse);
       const mounts = Object.fromEntries(
         Object.entries(body).map(([id, config]) => [
-          id, {
+          id,
+          {
             displayName: config.displayName,
             davPath: config.davPath.replace(/^\//, "").replace(/\/$/, ""),
             password: config.password,
-          }
-        ])
+          },
+        ]),
       );
 
       const storage = useStorage("mounts");

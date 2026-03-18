@@ -1,6 +1,6 @@
 <template>
   <div>
-    
+    Config page. To be implemented.
   </div>
 </template>
 
