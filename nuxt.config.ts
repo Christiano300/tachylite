@@ -6,10 +6,15 @@ export default defineNuxtConfig({
 
   nitro: {
     storage: {
-      mounts: {
-        driver: "fs",
-        base: "./data",
-      },
+      mounts: process.env.NODE_ENV === "production"
+        ? {
+            driver: "vercel-blob",
+            access: "private",
+          }
+        : {
+            driver: "fs",
+            base: "./data",
+          },
     },
     experimental: {
       tasks: true,
