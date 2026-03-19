@@ -9,7 +9,7 @@ export default defineNuxtConfig({
       mounts: process.env.NODE_ENV === "production"
         ? {
             driver: "vercel-blob",
-            access: "private",
+            access: "public",
           }
         : {
             driver: "fs",
