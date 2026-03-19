@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     storage: {
       mounts: process.env.NODE_ENV === "production"
         ? {
-            driver: "vercelBlob",
+            driver: "vercel-blob",
             access: "public",
           }
         : {
