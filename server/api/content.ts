@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import rehypeSlug from "rehype-slug";
 // @ts-ignore
@@ -10,8 +11,10 @@ import rehypeStringify from "rehype-stringify";
 import rehypePrism from "rehype-prism-plus";
 import rehypeMathJax from "rehype-mathjax/svg";
 import { createClient } from "webdav/dist/node/factory.js";
-import { LAST_FETCH_KEY, MountedFile, MOUNTS_ENTRY_KEY_PREFIX } from "../../shared/types";
-import { Heading, type Root } from "mdast";
+import { LAST_FETCH_KEY, MountedFile, MOUNTS_ENTRY_KEY_PREFIX, pathToUrl } from "../../shared/types";
+import { Heading, Link, type Root } from "mdast";
+import { inspect } from "unist-util-inspect";
+import { visit } from "unist-util-visit";
 
 export default defineEventHandler(async (event) => {
   checkLastFetch();
@@ -62,13 +65,16 @@ async function renderMarkdownToHtml(markdown: string, title: string): Promise<st
   const file = await unified()
     .use(remarkParse)
     .use(addTitle, { title })
+    .use(remarkGfm)
     .use(remarkWikiLink)
+    .use(fixLinks)
     .use(remarkMath)
+    .use(breakText)
     .use(remarkRehype)
     .use(rehypeSlug)
     .use(rehypeAutolinkHeadings, { behavior: "append" })
     .use(rehypeMathJax)
-    .use(rehypePrism)
+    .use(rehypePrism, { ignoreMissing: true,})
     .use(rehypeStringify)
     .process(markdown);
 
@@ -91,5 +97,29 @@ function addTitle(opts?: { title?: string }): (tree: Root) => void {
       },
     };
     children.unshift(replacement);
+  };
+}
+
+function fixLinks(): (tree: Root) => void {
+  return (root) => {
+    visit(root, "wikiLink", (node: Link) => {
+      if (node.data && node.data.hProperties) {
+        const href = node.data.hProperties.href;
+        if (typeof href === "string") {
+          node.data.hProperties.href = pathToUrl(href);
+        }
+      }
+    });
+    visit(root, "link", (node: Link) => {
+      if (!node.url.match(/[*"<>:|?]/)) {
+        node.url = pathToUrl(decodeURIComponent(node.url));
+      }
+    });
+  };
+}
+
+function breakText(): (tree: Root) => void {
+  return (root) => {
+    console.log(inspect(root, {color: true}));
   };
 }

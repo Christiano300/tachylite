@@ -4,17 +4,23 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
 
+  routeRules: {
+    "/md/**": { appLayout: "default" },
+    "/config": { appLayout: false },
+  },
+
   nitro: {
     storage: {
-      mounts: process.env.NODE_ENV === "production"
-        ? {
-            driver: "vercel-blob",
-            access: "public",
-          }
-        : {
-            driver: "fs",
-            base: "./data",
-          },
+      mounts:
+        process.env.NODE_ENV === "production"
+          ? {
+              driver: "vercel-blob",
+              access: "public",
+            }
+          : {
+              driver: "fs",
+              base: "./data",
+            },
     },
     experimental: {
       tasks: true,

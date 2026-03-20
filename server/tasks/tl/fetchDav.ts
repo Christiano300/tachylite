@@ -7,6 +7,7 @@ import {
   MOUNTS_ENTRY_KEY_PREFIX,
   MOUNTS_TOC_KEY_PREFIX,
   TocTree,
+  pathToUrl,
 } from "~~/shared/types";
 
 export default defineTask({
@@ -102,19 +103,6 @@ export default defineTask({
     return { result: null };
   },
 });
-
-function pathToUrl(path: string) {
-  return path
-    .split("/")
-    .map((part) =>
-      part
-        .replace(/\.md$/, "")
-        .replace(/ /g, "_")
-        .toLowerCase()
-        .replace(/[^A-Za-z0-9]+/g, "-"),
-    )
-    .join("/");
-}
 
 function writeToc(mountId: string, entries: Record<string, MountedFile>) {
   const toc: TocTree[] = [];
