@@ -37,7 +37,7 @@ async function fetchAndCache(davPath: string, cacheKey: string) {
   const content = await fetchMd(davPath);
   if (content.headers.etag) {
     const newEntry: CacheEntry = { value: content.data, etag: content.headers.etag!.replaceAll('"', "") };
-    store.setItem(cacheKey, newEntry);
+    store.setItem(cacheKey, newEntry, { allowOverwrite: true });
   } else {
     console.warn(`No ETag found for ${davPath}, skipping cache update`);
   }

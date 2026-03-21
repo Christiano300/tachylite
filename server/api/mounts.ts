@@ -26,7 +26,7 @@ export default eventHandler({
       );
 
       const storage = useStorage("tl");
-      await storage.setItem(key, JSON.stringify(mounts));
+      await storage.setItem(key, JSON.stringify(mounts), { allowOverwrite: true });
       return { success: true };
     } else {
       return new Response("Method not allowed", { status: 405 });

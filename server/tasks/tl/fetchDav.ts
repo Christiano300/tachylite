@@ -58,7 +58,7 @@ export default defineTask({
     </d:searchrequest>`;
 
     const fileInfos = (await client.search("/", { data: searchString })) as SearchResult;
-    store.setItem(LAST_FETCH_KEY, Date.now());
+    store.setItem(LAST_FETCH_KEY, Date.now(), { allowOverwrite: true });
     console.log(`Found ${fileInfos.results.length} markdown files on WebDAV server`);
 
     const baseURL = process.env.BASE_URL || "";
@@ -102,7 +102,7 @@ export default defineTask({
         }
       }
       writeToc(mountId, entries);
-      store.setItem(`${MOUNTS_ENTRY_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
+      store.setItem(`${MOUNTS_ENTRY_KEY_PREFIX}${mountId}`, JSON.stringify(entries), { allowOverwrite: true });
     }
 
     return { result: null };
@@ -134,7 +134,7 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
     });
   }
   const store = useStorage("tl");
-  store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
+  store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc), { allowOverwrite: true });
   console.log(`Wrote TOC for mount '${mountId}' with ${Object.keys(entries).length} entries`);
 }
 
