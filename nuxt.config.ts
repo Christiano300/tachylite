@@ -11,7 +11,7 @@ export default defineNuxtConfig({
 
   nitro: {
     storage: {
-      mounts:
+      tl:
         process.env.NODE_ENV === "production"
           ? {
               driver: "vercel-blob",

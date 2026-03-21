@@ -26,15 +26,22 @@ export type TocTree = {
   children: TocTree[];
 };
 
+export type CacheEntry = {
+  value: string;
+  etag: string;
+}
+
 export type HTree = Root;
 
-export const LAST_FETCH_KEY = "tl:lastFetch";
+export const LAST_FETCH_KEY = "dav:lastFetch";
 
-export const MOUNTS_CONFIG_KEY = "tl:mounts";
+export const MOUNTS_CONFIG_KEY = "mounts:config";
 
-export const MOUNTS_ENTRY_KEY_PREFIX = "tl-mounts:";
+export const MOUNTS_ENTRY_KEY_PREFIX = "mount_entry:";
 
-export const MOUNTS_TOC_KEY_PREFIX = "tl-toc:";
+export const MOUNTS_TOC_KEY_PREFIX = "mount_toc:";
+
+export const DAV_CACHE_KEY_PREFIX = "dav_cache:";
 
 export function pathToUrl(path: string) {
   return path

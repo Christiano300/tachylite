@@ -10,11 +10,10 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeStringify from "rehype-stringify";
 import rehypePrism from "rehype-prism-plus";
 import rehypeMathJax from "rehype-mathjax/svg";
-import { createClient } from "webdav/dist/node/factory.js";
 import { LAST_FETCH_KEY, MountedFile, MOUNTS_ENTRY_KEY_PREFIX, pathToUrl } from "../../shared/types";
 import { Heading, Link, type Root } from "mdast";
-import { inspect } from "unist-util-inspect";
 import { visit } from "unist-util-visit";
+import { cachedFetch } from "../utils/cache";
 
 export default defineEventHandler(async (event) => {
   checkLastFetch();
@@ -22,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const path = decodeURIComponent(query.path as string).replace(/^\//, "");
   const mountId = query.mount as string;
-  const store = useStorage("mounts");
+  const store = useStorage("tl");
   const mountEntries = (await store.getItem(MOUNTS_ENTRY_KEY_PREFIX + mountId)) as Record<
     string,
     MountedFile
@@ -31,12 +30,7 @@ export default defineEventHandler(async (event) => {
   if (!mountEntries || !mountEntries[path]) {
     throw createError({ statusCode: 404, message: "File not found" });
   }
-  const client = createClient(process.env.DAV_URL || "", {
-    username: process.env.DAV_USERNAME || "",
-    password: process.env.DAV_PASSWORD || "",
-  });
-  const url = `${process.env.FILES_URL}${mountEntries[path].davPath}`;
-  const markdown = (await client.getFileContents(url, { format: "text" })) as string;
+  const markdown = await cachedFetch(mountEntries[path].davPath);
   const html = await renderMarkdownToHtml(markdown, mountEntries[path].displayName);
 
   return {
@@ -46,7 +40,7 @@ export default defineEventHandler(async (event) => {
 });
 
 async function checkLastFetch() {
-  const store = useStorage("mounts");
+  const store = useStorage("tl");
   const lastFetch = (await store.hasItem(LAST_FETCH_KEY))
     ? ((await store.getItem(LAST_FETCH_KEY)) as number)
     : null;
@@ -111,7 +105,7 @@ function fixLinks(): (tree: Root) => void {
       }
     });
     visit(root, "link", (node: Link) => {
-      if (!node.url.match(/[*"<>:|?]/)) {
+      if (!node.url.match(/[*"<>:|?]/)) { // invalid in file names, excluding /
         node.url = pathToUrl(decodeURIComponent(node.url));
       }
     });
@@ -120,6 +114,19 @@ function fixLinks(): (tree: Root) => void {
 
 function breakText(): (tree: Root) => void {
   return (root) => {
-    console.log(inspect(root, {color: true}));
+    visit(root, "text", (node, index, parent) => {
+      if (node.value.includes("\n")) {
+        const parts = node.value.split("\n");
+        const newNodes = [];
+        for (let i = 0; i < parts.length; i++) {
+          newNodes.push({ type: "text", value: parts[i] });
+          if (i < parts.length - 1) {
+            newNodes.push({ type: "break" });
+          }
+        }
+        // @ts-expect-error thinks only the math extension is valid and ignores the default mdast types
+        parent!.children.splice(index!, 1, ...newNodes);
+      }
+    });
   };
 }

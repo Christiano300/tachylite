@@ -1,4 +1,5 @@
 import { createClient, type SearchResult } from "webdav";
+import { updateCache } from "~~/server/utils/cache";
 import {
   LAST_FETCH_KEY,
   MountConfig,
@@ -17,7 +18,7 @@ export default defineTask({
   },
   run: async () => {
     console.log("Fetching WebDAV file tree...");
-    const store = useStorage("mounts");
+    const store = useStorage("tl");
 
     const mountConfig = (await store.hasItem(MOUNTS_CONFIG_KEY))
       ? ((await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig)
@@ -35,6 +36,8 @@ export default defineTask({
                 <d:prop>
                     <oc:fileid/>
                     <d:displayname/>
+                    <d:getlastmodified/>
+                    <d:getetag/>
                 </d:prop>
             </d:select>
             <d:from>
@@ -76,13 +79,15 @@ export default defineTask({
         const path = file.filename.replace(baseURL, "").replace(/^\//, ""); // Remove base URL and leading slash
         const name = file.basename.replace(/\.md$/, "");
 
+        updateCache(path, file.etag!)
+
         return {
           displayName: name,
           davPath: path,
         };
       })
       .filter((x) => x !== null);
-
+    
     for (const [mountId, mount] of Object.entries(mountConfig)) {
       const entries = {} as Record<string, MountedFile>;
 
@@ -128,7 +133,8 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
       children: [],
     });
   }
-  const store = useStorage("mounts");
+  const store = useStorage("tl");
   store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
   console.log(`Wrote TOC for mount '${mountId}' with ${Object.keys(entries).length} entries`);
 }
+
