@@ -14,8 +14,9 @@ export default defineNuxtConfig({
       tl:
         process.env.NODE_ENV === "production"
           ? {
-              driver: "vercel-blob",
-              access: "public",
+              driver: "upstash",
+              url: process.env.KV_REST_API_URL!,
+              token: process.env.KV_REST_API_TOKEN!,
             }
           : {
               driver: "fs",
