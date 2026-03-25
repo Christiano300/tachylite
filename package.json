@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@flowershow/remark-wiki-link": "^3.4.0",
-    "@vercel/blob": "^2.3.1",
+    "@upstash/redis": "^1.37.0",
     "nuxt": "latest",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-mathjax": "^7.1.0",
