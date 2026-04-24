@@ -13,7 +13,7 @@
     "@flowershow/remark-wiki-link": "^3.4.0",
     "aws4fetch": "^1.0.20",
     "he": "^1.2.0",
-    "nuxt": "latest",
+    "nuxt": "^4.4.2",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-mathjax": "^7.1.0",
     "rehype-prism-plus": "^2.0.2",

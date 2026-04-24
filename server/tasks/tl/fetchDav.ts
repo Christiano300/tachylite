@@ -67,7 +67,7 @@ export default defineTask({
 function writeToc(mountId: string, entries: Record<string, MountedFile>) {
   const toc: TocTree[] = [];
   for (const file of Object.values(entries)) {
-    const parts = file.relativePath.split(":").filter((x) => x !== "");
+    const parts = file.relativePath.split("/").filter((x) => x !== "");
     parts.pop();
     let currentLevel = toc;
     for (const part of parts) {

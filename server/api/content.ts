@@ -15,7 +15,7 @@ import { Heading, Link, type Root } from "mdast";
 import { visit } from "unist-util-visit";
 
 export default defineEventHandler(async (event) => {
-  setTimeout(() => checkLastFetch());
+  checkLastFetch();
 
   const query = getQuery(event);
   const path = decodeURIComponent(query.path as string).replace(/^\//, "");

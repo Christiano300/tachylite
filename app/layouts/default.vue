@@ -1,14 +1,22 @@
 <template>
-  <UPage>
-    <template #left>
-      <UPageAside>
-        <UTree :items="items"></UTree>
-      </UPageAside>
-    </template>
-    <UPageBody>
-      <slot></slot>
-    </UPageBody>
-  </UPage>
+  <DocsHeader>
+    <UBreadcrumb :items="breadcrumb"></UBreadcrumb>
+  </DocsHeader>
+
+  <UMain>
+    <UContainer>
+      <UPage>
+        <template #left>
+          <UPageAside>
+            <UTree :items="items"></UTree>
+          </UPageAside>
+        </template>
+        <UPageBody>
+          <slot></slot>
+        </UPageBody>
+      </UPage>
+    </UContainer>
+  </UMain>
 </template>
 
 <script lang="ts" setup>
@@ -31,4 +39,28 @@ const items = computed(() => {
   value.forEach(transform);
   return value;
 });
+
+const breadcrumb = computed(() => {
+  if (!toc.value) return [];
+  const pathSegments = getPathSegments(route.path, toc.value);
+  if (!pathSegments) return [];
+  return pathSegments.map(label => ({ label }));
+});
+
+function getPathSegments(url: string, toc: TocTree[], segments: string[] = []): string[] | undefined {
+  for (const f of toc) {
+    segments.push(f.name);
+    if (f.url === url) {
+      return segments;
+    }
+    if (f.children) {
+      const result = getPathSegments(url, f.children, segments);
+      if (result) {
+        return result;
+      }
+    }
+    segments.pop();
+  }
+}
+
 </script>
