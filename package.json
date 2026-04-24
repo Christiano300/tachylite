@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@flowershow/remark-wiki-link": "^3.4.0",
-    "@upstash/redis": "^1.37.0",
     "aws4fetch": "^1.0.20",
     "he": "^1.2.0",
     "nuxt": "latest",
@@ -30,7 +29,6 @@
     "unist-util-visit": "^5.1.0",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4",
-    "webdav": "^5.9.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
