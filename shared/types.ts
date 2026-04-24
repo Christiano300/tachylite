@@ -16,7 +16,8 @@ export const mountConfigSchema = z.record(
 
 export type MountedFile = {
   displayName: string;
-  davPath: string;
+  filePath: string;
+  r2Path: string;
   relativePath: string;
 };
 
@@ -25,11 +26,6 @@ export type TocTree = {
   url: string;
   children: TocTree[];
 };
-
-export type CacheEntry = {
-  value: string;
-  etag: string;
-}
 
 export type HTree = Root;
 
@@ -40,8 +36,6 @@ export const MOUNTS_CONFIG_KEY = "mounts:config";
 export const MOUNTS_ENTRY_KEY_PREFIX = "mount_entry:";
 
 export const MOUNTS_TOC_KEY_PREFIX = "mount_toc:";
-
-export const DAV_CACHE_KEY_PREFIX = "dav_cache:";
 
 export function pathToUrl(path: string) {
   return path

@@ -11,17 +11,28 @@ export default defineNuxtConfig({
 
   nitro: {
     storage: {
-      tl:
+      persist:
         process.env.NODE_ENV === "production"
           ? {
-              driver: "upstash",
-              url: process.env.KV_REST_API_URL!,
-              token: process.env.KV_REST_API_TOKEN!,
+              driver: "s3",
+              accessKeyId: process.env.R2_PERSIST_KEY_ID!,
+              secretAccessKey: process.env.R2_PERSIST_KEY!,
+              endpoint: process.env.R2_PERSIST_ENDPOINT!,
+              bucket: process.env.R2_PERSIST_BUCKET!,
+              region: "auto",
             }
           : {
               driver: "fs",
               base: "./data",
             },
+      access: {
+        driver: "s3",
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_ACCESS_KEY!,
+        endpoint: process.env.R2_ACCESS_ENDPOINT!,
+        bucket: process.env.R2_ACCESS_BUCKET!,
+        region: "auto",
+      }
     },
     experimental: {
       tasks: true,

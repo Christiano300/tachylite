@@ -3,7 +3,7 @@ import { mountConfigSchema, MOUNTS_CONFIG_KEY } from "../../shared/types";
 export default eventHandler({
   handler: async (event) => {
     if (event.method === "GET") {
-      const storage = useStorage("tl");
+      const storage = useStorage("persist");
       const mounts = await storage.getItem(MOUNTS_CONFIG_KEY);
       console.log(mounts, !mounts);
       return mounts ?? {};
@@ -23,7 +23,7 @@ export default eventHandler({
         ]),
       );
 
-      const storage = useStorage("tl");
+      const storage = useStorage("persist");
       await storage.setItem(MOUNTS_CONFIG_KEY, JSON.stringify(mounts), { allowOverwrite: true });
       return { success: true };
     } else {

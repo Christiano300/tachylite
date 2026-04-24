@@ -1,7 +1,4 @@
-import { createClient, type SearchResult } from "webdav";
-import { updateCache } from "~~/server/utils/cache";
 import {
-  LAST_FETCH_KEY,
   MountConfig,
   MountedFile,
   MOUNTS_CONFIG_KEY,
@@ -9,7 +6,10 @@ import {
   MOUNTS_TOC_KEY_PREFIX,
   TocTree,
   pathToUrl,
+  LAST_FETCH_KEY,
 } from "~~/shared/types";
+
+import he from "he";
 
 export default defineTask({
   meta: {
@@ -18,82 +18,37 @@ export default defineTask({
   },
   run: async () => {
     console.log("Fetching WebDAV file tree...");
-    const store = useStorage("tl");
+    const store = useStorage("persist");
 
     const mountConfig = (await store.hasItem(MOUNTS_CONFIG_KEY))
       ? ((await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig)
       : {};
 
-    const client = createClient(process.env.DAV_URL || "", {
-      username: process.env.DAV_USERNAME || "",
-      password: process.env.DAV_PASSWORD || "",
-    });
+    const accessStore = useStorage("access");
+    const fileNames = await accessStore.getKeys();
 
-    const searchString = `<?xml version="1.0" encoding="UTF-8"?>
-    <d:searchrequest xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
-        <d:basicsearch>
-            <d:select>
-                <d:prop>
-                    <oc:fileid/>
-                    <d:displayname/>
-                    <d:getlastmodified/>
-                    <d:getetag/>
-                </d:prop>
-            </d:select>
-            <d:from>
-                <d:scope>
-                    <d:href>/files/iPhone</d:href>
-                    <d:depth>infinity</d:depth>
-                </d:scope>
-            </d:from>
-            <d:where>
-                <d:eq>
-                    <d:prop>
-                        <d:getcontenttype/>
-                    </d:prop>
-                    <d:literal>text/markdown</d:literal>
-                </d:eq>
-            </d:where>
-        </d:basicsearch>
-    </d:searchrequest>`;
-
-    const fileInfos = (await client.search("/", { data: searchString })) as SearchResult;
     store.setItem(LAST_FETCH_KEY, Date.now(), { allowOverwrite: true });
-    console.log(`Found ${fileInfos.results.length} markdown files on WebDAV server`);
+    console.log(`Found ${fileNames.length} markdown files on WebDAV server`);
 
-    const baseURL = process.env.BASE_URL || "";
-    if (baseURL == "") {
-      console.warn(
-        "No base URL set. If using nextcloud, this is likely a mistake. BASE_URL should be set to something like '/remote.php/dav/files/USERNAME/FOLDER'",
-      );
-    }
-
-    const files = fileInfos.results
+    const files = fileNames
+      .filter((key) => key.endsWith(".md"))
       .map((file) => {
-        if (!file.filename.startsWith(baseURL)) {
-          console.warn(
-            `Skipping file '${file.filename}' as it does not start with base URL '${baseURL}'`,
-          );
-          return null;
-        }
-        const path = file.filename.replace(baseURL, "").replace(/^\//, ""); // Remove base URL and leading slash
-        const name = file.basename.replace(/\.md$/, "");
-
-        updateCache(path, file.etag!)
+        const parts = file.split(":").map(part => he.decode(part));
+        const name = parts.at(-1)?.replace(/\.md$/, "") ?? "";
 
         return {
           displayName: name,
-          davPath: path,
+          r2Path: file,
+          filePath: file.split(":").map(part => he.decode(part)).join("/"),
         };
-      })
-      .filter((x) => x !== null);
+      });
     
     for (const [mountId, mount] of Object.entries(mountConfig)) {
       const entries = {} as Record<string, MountedFile>;
 
       for (const file of files) {
-        if (file.davPath.startsWith(mount.davPath)) {
-          const relativePath = file.davPath.replace(mount.davPath, "").replace(/^\//, "");
+        if (file.filePath.startsWith(mount.davPath)) {
+          const relativePath = file.filePath.replace(mount.davPath, "").replace(/^\//, "");
           const relativeUrl = pathToUrl(relativePath);
           entries[relativeUrl] = {
             ...file,
@@ -112,7 +67,7 @@ export default defineTask({
 function writeToc(mountId: string, entries: Record<string, MountedFile>) {
   const toc: TocTree[] = [];
   for (const file of Object.values(entries)) {
-    const parts = file.relativePath.split("/").filter((x) => x !== "");
+    const parts = file.relativePath.split(":").filter((x) => x !== "");
     parts.pop();
     let currentLevel = toc;
     for (const part of parts) {
@@ -133,7 +88,7 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
       children: [],
     });
   }
-  const store = useStorage("tl");
+  const store = useStorage("persist");
   store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc), { allowOverwrite: true });
   console.log(`Wrote TOC for mount '${mountId}' with ${Object.keys(entries).length} entries`);
 }
