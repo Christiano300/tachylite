@@ -68,12 +68,14 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
   const toc: TocTree[] = [];
   for (const file of Object.values(entries)) {
     const parts = file.relativePath.split("/").filter((x) => x !== "");
+    const currentParts = [];
     parts.pop();
     let currentLevel = toc;
     for (const part of parts) {
+      currentParts.push(part);
       let nextLevel = currentLevel.find((x) => x.name === part);
       if (!nextLevel) {
-        nextLevel = { name: part, url: "", children: [] };
+        nextLevel = { name: part, url: `/md/${mountId}/${pathToUrl(currentParts.join("/"))}`, children: [] };
         currentLevel.push(nextLevel);
       } else {
         if (!nextLevel.children) {

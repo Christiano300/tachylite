@@ -5,6 +5,10 @@ export type MountConfig = {
   [id: string]: { displayName: string; davPath: string; password: string | null };
 };
 
+export type PublicMountConfig = {
+  [id: string]: { displayName: string; davPath: string; hasPassword: boolean };
+};
+
 export const mountConfigSchema = z.record(
   z.string(),
   z.object({

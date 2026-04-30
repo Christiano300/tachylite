@@ -5,8 +5,7 @@ export default defineNuxtConfig({
   ssr: true,
 
   routeRules: {
-    "/md/**": { appLayout: "default" },
-    "/config": { appLayout: false },
+    "/md/**": { appLayout: "docs" },
   },
 
   nitro: {
@@ -36,6 +35,7 @@ export default defineNuxtConfig({
     },
     experimental: {
       tasks: true,
+      wasm: false,
     },
   },
 
