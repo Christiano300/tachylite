@@ -1,7 +1,9 @@
 import { mountConfigSchema, MOUNTS_CONFIG_KEY } from "../../shared/types";
+import { requireMasterAuth } from "../utils/auth";
 
 export default eventHandler({
   handler: async (event) => {
+    if (requireMasterAuth(event)) return;
     if (event.method === "GET") {
       const storage = useStorage("persist");
       const mounts = await storage.getItem(MOUNTS_CONFIG_KEY);

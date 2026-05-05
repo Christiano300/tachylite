@@ -2,11 +2,20 @@ import { z } from "zod";
 import { type Root } from "hast";
 
 export type MountConfig = {
-  [id: string]: { displayName: string; davPath: string; password: string | null };
+  [id: string]: {
+    displayName: string;
+    davPath: string;
+    password?: string;
+    hidden: boolean;
+    description?: string;
+  };
 };
 
-export type PublicMountConfig = {
-  [id: string]: { displayName: string; davPath: string; hasPassword: boolean };
+export type PublicMount = {
+  id: string;
+  displayName: string;
+  description?: string;
+  hasPassword: boolean;
 };
 
 export const mountConfigSchema = z.record(
@@ -14,7 +23,9 @@ export const mountConfigSchema = z.record(
   z.object({
     displayName: z.string(),
     davPath: z.string(),
-    password: z.string().nullable(),
+    password: z.string().optional(),
+    hidden: z.boolean(),
+    description: z.string().optional(),
   }),
 );
 
