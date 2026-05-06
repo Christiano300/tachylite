@@ -17,7 +17,7 @@
           <UFormField name="hidden" label="Hidden">
             <UCheckbox v-model="mount.hidden" @update:model-value="onHiddenChange(mount)" />
           </UFormField>
-          <UFormField v-if="mount.hidden" name="password" label="Password">
+          <UFormField name="password" label="Password">
             <UInput v-model="mount.password" type="password" placeholder="Password" />
           </UFormField>
         </div>
@@ -31,6 +31,12 @@
           ></UButton>
         </div>
       </div>
+      <UFormField name="description" label="Description">
+        <UInput
+          v-model="mount.description"
+          placeholder="Optional description for this mount"
+        />
+      </UFormField>
     </UCard>
 
     <div class="flex gap-4">
@@ -43,34 +49,25 @@
 </template>
 
 <script lang="ts" setup>
-interface Mount {
-  id: string;
-  displayName: string;
-  davPath: string;
-  hidden: boolean;
-  password: string;
-}
+import type { MountConfig } from '~~/shared/types';
 
-interface MountApiResponse {
-  displayName: string;
-  davPath: string;
-  password: string | null;
-}
+type Mount = MountConfig[keyof MountConfig] & { id: string };
 
 const saving = ref(false);
 const mounts = ref<Mount[]>([]);
 const originalMounts = ref<Mount[]>([]);
 
 const { data, refresh } = await useFetch("/api/mounts", {
-  transform: (data: Record<string, MountApiResponse>): Mount[] => {
+  transform: (data: Record<string, Mount>): Mount[] => {
     const result: Mount[] = [];
     for (const [id, mount] of Object.entries(data || {})) {
       result.push({
         id,
         displayName: mount.displayName,
         davPath: mount.davPath,
-        hidden: mount.password !== null,
+        hidden: mount.hidden,
         password: mount.password ?? "",
+        description: mount.description ?? "",
       });
     }
     return result;
@@ -101,6 +98,7 @@ function addMount() {
     davPath: "",
     hidden: false,
     password: "",
+    description: "",
   });
 }
 
@@ -118,12 +116,14 @@ const hasChanges = computed(() => {
 async function saveMounts() {
   saving.value = true;
   try {
-    const toSave: Record<string, MountApiResponse> = {};
+    const toSave: MountConfig = {};
     for (const mount of mounts.value) {
       toSave[mount.id] = {
         displayName: mount.displayName,
         davPath: mount.davPath,
-        password: mount.hidden ? mount.password : null,
+        hidden: mount.hidden,
+        password: mount.password ? mount.password : undefined,
+        description: mount.description,
       };
     }
     await $fetch("/api/mounts", {

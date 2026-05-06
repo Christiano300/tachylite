@@ -28,7 +28,7 @@ export const requireMountAuth = async (event: Event, mountId: string | null | un
   }
 
   const mountPassword = mounts[mountId]!.password;
-  if (mountPassword === null) return false;
+  if (!mountPassword) return false;
   const credentials = extractBasicAuth(event, mountId);
   if (!credentials) return true;
   const providedPassword = credentials[1];

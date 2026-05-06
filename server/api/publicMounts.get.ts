@@ -4,15 +4,16 @@ export default eventHandler({
   handler: async () => {
     const storage = useStorage("persist");
     const mounts = (await storage.getItem(MOUNTS_CONFIG_KEY)) as MountConfig | null;
-    if (!mounts) return {};
+    if (!mounts) return [];
 
     const publicMounts: PublicMount[] = [];
     for (const [id, config] of Object.entries(mounts)) {
+      if (config.hidden) continue;
       publicMounts.push({
         id: id,
         displayName: config.displayName,
         description: config.description,
-        hasPassword: config.password !== null,
+        hasPassword: config.password !== null && config.password !== undefined,
       });
     }
     return publicMounts;

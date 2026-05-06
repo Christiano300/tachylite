@@ -6,6 +6,6 @@ export default defineEventHandler(async (event) => {
     const mountId = pathname.split("/")[2];
     if (await requireMountAuth(event, mountId)) return;
   } else if (pathname.startsWith("/config")) {
-    if (await requireMasterAuth(event)) return;
+    if (requireMasterAuth(event)) return;
   }
 });
