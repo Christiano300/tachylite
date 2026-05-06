@@ -7,7 +7,6 @@ export default eventHandler({
     if (event.method === "GET") {
       const storage = useStorage("persist");
       const mounts = await storage.getItem(MOUNTS_CONFIG_KEY);
-      console.log(mounts, !mounts);
       return mounts ?? {};
     } else if (event.method === "PUT") {
       const body = await readValidatedBody(event, mountConfigSchema.safeParse);
