@@ -15,10 +15,28 @@
             <UInput v-model="mount.davPath" />
           </UFormField>
           <UFormField name="hidden" label="Hidden">
-            <UCheckbox v-model="mount.hidden" @update:model-value="onHiddenChange(mount)" />
+            <UCheckbox v-model="mount.hidden" />
           </UFormField>
           <UFormField name="password" label="Password">
-            <UInput v-model="mount.password" type="password" placeholder="Password" />
+            <UInput
+              v-model="mount.password"
+              :type="mount.showPw ? 'text' : 'password'"
+              placeholder="Password"
+              :ui="{ trailing: 'pe-1' }"
+            >
+              <template #trailing>
+                <UButton
+                  color="neutral"
+                  variant="link"
+                  size="sm"
+                  :icon="mount.showPw ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                  :aria-label="mount.showPw ? 'Hide password' : 'Show password'"
+                  :aria-pressed="mount.showPw"
+                  aria-controls="password"
+                  @click="mount.showPw = !mount.showPw"
+                />
+              </template>
+            </UInput>
           </UFormField>
         </div>
         <div>
@@ -31,10 +49,11 @@
           ></UButton>
         </div>
       </div>
-      <UFormField name="description" label="Description">
+      <UFormField name="description" label="Description" class="w-full">
         <UInput
           v-model="mount.description"
           placeholder="Optional description for this mount"
+          class="w-full"
         />
       </UFormField>
     </UCard>
@@ -49,15 +68,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { MountConfig } from '~~/shared/types';
+import type { MountConfig } from "~~/shared/types";
 
-type Mount = MountConfig[keyof MountConfig] & { id: string };
+type Mount = MountConfig[keyof MountConfig] & { id: string; showPw: boolean };
 
 const saving = ref(false);
 const mounts = ref<Mount[]>([]);
 const originalMounts = ref<Mount[]>([]);
 
-const { data, refresh } = await useFetch("/api/mounts", {
+const { data, error, refresh } = await useFetch("/api/mounts", {
   transform: (data: Record<string, Mount>): Mount[] => {
     const result: Mount[] = [];
     for (const [id, mount] of Object.entries(data || {})) {
@@ -68,6 +87,7 @@ const { data, refresh } = await useFetch("/api/mounts", {
         hidden: mount.hidden,
         password: mount.password ?? "",
         description: mount.description ?? "",
+        showPw: false,
       });
     }
     return result;
@@ -85,12 +105,6 @@ watch(
   { immediate: true },
 );
 
-function onHiddenChange(mount: Mount) {
-  if (!mount.hidden) {
-    mount.password = "";
-  }
-}
-
 function addMount() {
   mounts.value.push({
     id: "",
@@ -99,6 +113,7 @@ function addMount() {
     hidden: false,
     password: "",
     description: "",
+    showPw: false,
   });
 }
 

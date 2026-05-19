@@ -1,23 +1,22 @@
 import type { H3Event } from "h3";
-import { type MountConfig, MOUNTS_CONFIG_KEY } from "~~/shared/types";
+import { MASTER_AUTH_REALM, type MountConfig, MOUNTS_CONFIG_KEY } from "~~/shared/types";
 
 type Event = H3Event<globalThis.EventHandlerRequest>;
 
-export const requireMasterAuth = (event: Event): boolean => {
-  const credentials = extractBasicAuth(event, "$master$");
+export const masterAuthDenied = (event: Event): boolean => {
+  const credentials = extractBasicAuth(event, MASTER_AUTH_REALM);
   if (!credentials) return true;
   const [username, password] = credentials;
   const expectedUsername = process.env.MASTER_USER;
   const expectedPassword = process.env.MASTER_PASSWORD;
-  console.warn(`Master auth attempt with username "${username}" and password "${password}", expected username "${expectedUsername}" and password "${expectedPassword}"`);
   if (username !== expectedUsername || password !== expectedPassword) {
-    errorRequireAuth(event, "$master$");
+    errorRequireAuth(event, MASTER_AUTH_REALM);
     return true;
   }
   return false;
 };
 
-export const requireMountAuth = async (event: Event, mountId: string | null | undefined): Promise<boolean> => {
+export const mountAuthDenied = async (event: Event, mountId: string | null | undefined): Promise<boolean> => {
   const storage = useStorage("persist");
   const mounts = (await storage.getItem(MOUNTS_CONFIG_KEY)) as MountConfig | null;
   if (!mounts || !mountId || !mounts[mountId]) {
@@ -27,7 +26,7 @@ export const requireMountAuth = async (event: Event, mountId: string | null | un
 
   const mountPassword = mounts[mountId]!.password;
   if (!mountPassword) return false;
-  const credentials = extractBasicAuth(event, mountId);
+  const credentials = extractBasicAuth(event, `mount:${mountId}`);
   if (!credentials) return true;
   const providedPassword = credentials[1];
 
@@ -36,7 +35,7 @@ export const requireMountAuth = async (event: Event, mountId: string | null | un
     console.warn(
       `Unauthorized access attempt to mount ${mountId} with password "${providedPassword}"`,
     );
-    errorRequireAuth(event, mountId);
+    errorRequireAuth(event, `mount:${mountId}`);
     return true;
   }
   return false;
@@ -59,7 +58,7 @@ function extractBasicAuth(event: Event, realm: string) {
 }
 
 function errorRequireAuth(event: Event, realm: string) {
-  setHeader(event, "WWW-Authenticate", `Basic realm="${realm}"`);
+  setHeader(event, "WWW-Authenticate", `Basic realm="tachylite:${realm}"`);
   sendError(
     event,
     createError({

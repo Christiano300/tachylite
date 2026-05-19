@@ -27,12 +27,30 @@
 
 <script lang="ts" setup>
 import type { TreeItem } from "@nuxt/ui";
-import type { TocTree } from "~~/shared/types";
+import type { PublicMount, TocTree } from "~~/shared/types";
 const route = useRoute();
 const headers = useRequestHeaders(["authorization"]);
+const visitedCookie = useCookie<PublicMount[]>("visitedMounts", {
+  default: () => [],
+  sameSite: "strict",
+});
 
 const { data: toc } = await useFetch<TocTree[]>(`/api/toc/${route.params.mount}`, {
   headers,
+});
+
+const { data: mountData } = await useFetch<PublicMount>(`/api/mount/${route.params.mount}`, {
+  headers,
+});
+
+watchEffect(() => {
+  if (!mountData.value) return;
+  const index = visitedCookie.value.findIndex((m) => m.id === mountData.value?.id);
+  if (index === -1) {
+    visitedCookie.value.push(mountData.value);
+  } else {
+    visitedCookie.value[index] = mountData.value;
+  }
 });
 
 const items = computed(() => {
@@ -42,7 +60,7 @@ const items = computed(() => {
     node.label = node.name;
     node.children?.forEach(transform);
     node.onSelect = () => {
-      if (node.url) navigateTo(node.url);
+      if (node.url && node.children.length === 0) navigateTo(node.url);
     };
     node.defaultExpanded = node.children && node.children.length > 0 && route.path.startsWith(node.url);
   };
@@ -58,15 +76,15 @@ const current = computed(() => {
       return;
     }
     node.children?.forEach(walk);
-  }
+  };
   items.value?.forEach(walk);
   return current;
 });
 
 const breadcrumb = computed(() => {
-  if (!toc.value) return [];
+  if (!toc.value || !mountData.value) return [];
   const pathSegments = getPathSegments(route.path, toc.value);
-  if (!pathSegments) return [];
+  if (!pathSegments) return [{ label: mountData.value.displayName }];
   return pathSegments.map((label) => ({ label }));
 });
 

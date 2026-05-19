@@ -13,7 +13,7 @@ import rehypeMathJax from "rehype-mathjax/svg";
 import { LAST_FETCH_KEY, MountedFile, MOUNTS_ENTRY_KEY_PREFIX, pathToUrl } from "../../shared/types";
 import { Heading, Link, type Root } from "mdast";
 import { visit } from "unist-util-visit";
-import { requireMountAuth } from "../utils/auth";
+import { mountAuthDenied } from "../utils/auth";
 
 export default defineEventHandler(async (event) => {
   setTimeout(() => checkLastFetch());
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const path = decodeURIComponent(query.path as string).replace(/^\//, "");
   const mountId = query.mount as string;
-  if (await requireMountAuth(event, mountId)) return;
+  if (await mountAuthDenied(event, mountId)) return;
   const store = useStorage("persist");
   const accessStore = useStorage("access");
   const mountEntries = (await store.getItem(MOUNTS_ENTRY_KEY_PREFIX + mountId)) as Record<

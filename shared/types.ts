@@ -52,6 +52,8 @@ export const MOUNTS_ENTRY_KEY_PREFIX = "mount_entry:";
 
 export const MOUNTS_TOC_KEY_PREFIX = "mount_toc:";
 
+export const MASTER_AUTH_REALM = "$master$";
+
 export function pathToUrl(path: string) {
   return path
     .split("/")
