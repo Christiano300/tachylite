@@ -9,13 +9,7 @@
       <UBreadcrumb :items="breadcrumb"></UBreadcrumb>
     </template>
     <template #body>
-      <UTree :items="items" :get-key="(item) => item.url" v-model="current">
-        <template #item-label="{ item }">
-          <NuxtLink :to="item.url" class="block w-full h-full" active-class="font-bold">
-            {{ item.label }}
-          </NuxtLink>
-        </template>
-      </UTree>
+      <NavTree :items="items"></NavTree>
     </template>
   </UHeader>
 
@@ -24,13 +18,7 @@
       <UPage v-if="toc">
         <template #left>
           <UPageAside id="page-aside">
-            <UTree :items="items" :get-key="(item) => item.url" v-model="current">
-              <template #item-label="{ item }">
-                <NuxtLink :to="item.url" class="block w-full h-full" active-class="font-bold">
-                  {{ item.label }}
-                </NuxtLink>
-              </template>
-            </UTree>
+            <NavTree :items="items"></NavTree>
           </UPageAside>
         </template>
         <UPageBody>
@@ -83,19 +71,6 @@ const items = computed(() => {
   };
   value.forEach(transform);
   return value;
-});
-
-const current = computed(() => {
-  let current: (TocTree & TreeItem) | undefined = undefined;
-  const walk = (node: TocTree) => {
-    if (node.url === route.path) {
-      current = node;
-      return;
-    }
-    node.children?.forEach(walk);
-  };
-  items.value?.forEach(walk);
-  return current;
 });
 
 const breadcrumb = computed(() => {
