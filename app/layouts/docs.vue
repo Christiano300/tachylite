@@ -1,14 +1,30 @@
 <template>
-  <DocsHeader>
-    <UBreadcrumb :items="breadcrumb"></UBreadcrumb>
-  </DocsHeader>
+  <UHeader>
+    <template #left>
+      <NuxtLink to="/">
+        <span class="text-xl font-bold">Tachylite</span>
+      </NuxtLink>
+    </template>
+    <template #default>
+      <UBreadcrumb :items="breadcrumb"></UBreadcrumb>
+    </template>
+    <template #body>
+      <UTree :items="items" :get-key="(item) => item.url" v-model="current">
+        <template #item-label="{ item }">
+          <NuxtLink :to="item.url" class="block w-full h-full" active-class="font-bold">
+            {{ item.label }}
+          </NuxtLink>
+        </template>
+      </UTree>
+    </template>
+  </UHeader>
 
   <UMain>
     <UContainer>
       <UPage v-if="toc">
         <template #left>
           <UPageAside id="page-aside">
-            <UTree :items="items" :get-key="item => item.url" v-model="current">
+            <UTree :items="items" :get-key="(item) => item.url" v-model="current">
               <template #item-label="{ item }">
                 <NuxtLink :to="item.url" class="block w-full h-full" active-class="font-bold">
                   {{ item.label }}
@@ -62,7 +78,8 @@ const items = computed(() => {
     node.onSelect = () => {
       if (node.url && node.children.length === 0) navigateTo(node.url);
     };
-    node.defaultExpanded = node.children && node.children.length > 0 && route.path.startsWith(node.url);
+    node.defaultExpanded =
+      node.children && node.children.length > 0 && route.path.startsWith(node.url);
   };
   value.forEach(transform);
   return value;

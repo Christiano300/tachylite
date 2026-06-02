@@ -48,7 +48,7 @@ async function checkLastFetch() {
     : null;
   const now = Date.now();
   if (!lastFetch || now - lastFetch > 20 * 1000) {
-    store.setItem(LAST_FETCH_KEY, now, { allowOverwrite: true });
+    store.setItem(LAST_FETCH_KEY, now);
     try {
       runTask("tl:fetchDav");
     } catch (error) {

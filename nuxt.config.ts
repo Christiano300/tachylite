@@ -1,5 +1,10 @@
+import { qrcode } from "vite-plugin-qrcode";
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  vite: {
+    plugins: [qrcode()],
+  },
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   ssr: true,
@@ -31,7 +36,7 @@ export default defineNuxtConfig({
         endpoint: process.env.R2_ACCESS_ENDPOINT!,
         bucket: process.env.R2_ACCESS_BUCKET!,
         region: "auto",
-      }
+      },
     },
     experimental: {
       tasks: true,

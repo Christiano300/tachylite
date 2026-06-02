@@ -62,7 +62,7 @@ export function pathToUrl(path: string) {
         .replace(/\.md$/, "")
         .replace(/ /g, "_")
         .toLowerCase()
-        .replace(/[^A-Za-z0-9]+/g, "-"),
+        .replace(/[^A-Za-z0-9#]+/g, "-"),
     )
     .join("/");
 }
