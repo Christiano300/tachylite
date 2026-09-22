@@ -1,5 +1,5 @@
 <template>
-  <UTree :items="items" :get-key="(item) => item.url" v-model="current" :ui="{linkLabel: ""}">
+  <UTree :items="items" :get-key="(item) => item.url" v-model="current" :ui="{linkLabel: ''}">
     <template #item-label="{ item }">
       <NuxtLink
         v-if="item.url && !item.children?.length"
