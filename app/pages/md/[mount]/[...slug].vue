@@ -20,4 +20,8 @@ html, body {
   scrollbar-gutter: stable;
   scrollbar-color: var(--scrollbar-color);
 }
+
+svg {
+  display: inline-block;
+}
 </style>
