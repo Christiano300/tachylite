@@ -4,7 +4,7 @@
       <NuxtLink
         v-if="item.url && !item.children?.length"
         :to="item.url"
-        class="block w-full h-full"
+        class="block w-full h-full text-left text-wrap wrap-break-word"
         active-class="font-bold"
       >
         {{ item.label }}

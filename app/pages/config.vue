@@ -2,7 +2,7 @@
   <h1 class="text-4xl font-bold text-center mb-8">Configure Mounts</h1>
 
   <div class="max-w-4xl mx-auto space-y-6">
-    <UCard v-for="mount in mounts" :key="mount.id">
+    <UCard v-for="mount in mounts" :key="mount.rowKey">
       <div class="flex items-center gap-2 justify-between space-y-4">
         <div class="flex items-center gap-2">
           <UFormField name="id" label="Mount ID">
@@ -33,7 +33,7 @@
                   :aria-label="mount.showPw ? 'Hide password' : 'Show password'"
                   :aria-pressed="mount.showPw"
                   aria-controls="password"
-                  @click="mount.showPw = !mount.showPw"
+                  @click="togglePasswordVisibility(mount)"
                 />
               </template>
             </UInput>
@@ -44,7 +44,7 @@
             color="error"
             variant="ghost"
             size="md"
-            @click="removeMount(mount.id)"
+            @click="removeMount(mount.rowKey)"
             icon="i-lucide-trash"
           ></UButton>
         </div>
@@ -70,11 +70,12 @@
 <script lang="ts" setup>
 import type { MountConfig } from "~~/shared/types";
 
-type Mount = MountConfig[keyof MountConfig] & { id: string; showPw: boolean };
+type Mount = MountConfig[keyof MountConfig] & { id: string; rowKey: string; showPw: boolean };
 
 const saving = ref(false);
 const mounts = ref<Mount[]>([]);
 const originalMounts = ref<Mount[]>([]);
+let nextMountKey = 0;
 
 const { data, error, refresh } = await useFetch("/api/mounts", {
   transform: (data: Record<string, Mount>): Mount[] => {
@@ -82,6 +83,7 @@ const { data, error, refresh } = await useFetch("/api/mounts", {
     for (const [id, mount] of Object.entries(data || {})) {
       result.push({
         id,
+        rowKey: id,
         displayName: mount.displayName,
         davPath: mount.davPath,
         hidden: mount.hidden,
@@ -108,6 +110,7 @@ watch(
 function addMount() {
   mounts.value.push({
     id: "",
+    rowKey: `new-${nextMountKey++}`,
     displayName: "",
     davPath: "",
     hidden: false,
@@ -117,15 +120,22 @@ function addMount() {
   });
 }
 
-function removeMount(id: string) {
-  const index = mounts.value.findIndex((m) => m.id === id);
+function removeMount(rowKey: string) {
+  const index = mounts.value.findIndex((m) => m.rowKey === rowKey);
   if (index !== -1) {
     mounts.value.splice(index, 1);
   }
 }
 
+function togglePasswordVisibility(mount: Mount) {
+  mount.showPw = !mount.showPw;
+}
+
 const hasChanges = computed(() => {
-  return JSON.stringify(mounts.value) !== JSON.stringify(originalMounts.value);
+  const persistedMounts = (value: Mount[]) =>
+    value.map(({ rowKey, showPw, ...mount }) => mount);
+
+  return JSON.stringify(persistedMounts(mounts.value)) !== JSON.stringify(persistedMounts(originalMounts.value));
 });
 
 async function saveMounts() {
@@ -145,8 +155,11 @@ async function saveMounts() {
       method: "PUT",
       body: toSave,
     });
-    originalMounts.value = structuredClone(mounts.value);
     await refresh();
+    if (data.value) {
+      mounts.value = structuredClone(data.value);
+      originalMounts.value = structuredClone(data.value);
+    }
   } finally {
     saving.value = false;
   }
