@@ -9,6 +9,8 @@ import {
   LAST_FETCH_KEY,
 } from "~~/shared/types";
 
+let fetchInProgress = false;
+
 import he from "he";
 
 export default defineTask({
@@ -17,50 +19,68 @@ export default defineTask({
     description: "Fetches the file tree from the WebDAV server and generates the mounts",
   },
   run: async () => {
-    console.log("Fetching WebDAV file tree...");
-    const store = useStorage("persist");
-
-    const mountConfig = (await store.hasItem(MOUNTS_CONFIG_KEY))
-      ? ((await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig)
-      : {};
-
-    const accessStore = useStorage("access");
-    const fileNames = await accessStore.getKeys();
-
-    store.setItem(LAST_FETCH_KEY, Date.now());
-    console.log(`Found ${fileNames.length} markdown files on WebDAV server`);
-
-    const files = fileNames
-      .filter((key) => key.endsWith(".md"))
-      .map((file) => {
-        const parts = file.split(":").map(part => he.decode(part));
-        const name = parts.at(-1)?.replace(/\.md$/, "") ?? "";
-
-        return {
-          displayName: name,
-          r2Path: file,
-          filePath: file.split(":").map(part => he.decode(part)).join("/"),
-        };
-      });
-    
-    for (const [mountId, mount] of Object.entries(mountConfig)) {
-      const entries = {} as Record<string, MountedFile>;
-
-      for (const file of files) {
-        if (file.filePath.startsWith(mount.davPath)) {
-          const relativePath = file.filePath.replace(mount.davPath, "").replace(/^\//, "");
-          const relativeUrl = pathToUrl(relativePath);
-          entries[relativeUrl] = {
-            ...file,
-            relativePath,
-          };
-        }
-      }
-      writeToc(mountId, entries);
-      store.setItem(`${MOUNTS_ENTRY_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
+    if (fetchInProgress) {
+      return { result: null };
     }
+    fetchInProgress = true;
+    console.log("Fetching WebDAV file tree...");
+    try {
+      const store = useStorage("persist");
 
-    return { result: null };
+      const mountConfig = (await store.hasItem(MOUNTS_CONFIG_KEY))
+        ? ((await store.getItem(MOUNTS_CONFIG_KEY)) as MountConfig)
+        : {};
+
+      const accessStore = useStorage("access");
+      const fileNames = await accessStore.getKeys();
+
+      if (fileNames == undefined || fileNames.length == 0) {
+        return { result: null };
+      }
+
+      store.setItem(LAST_FETCH_KEY, Date.now());
+      console.log(`Found ${fileNames.length} markdown files on WebDAV server`);
+
+      const files = fileNames
+        .filter((key) => key.endsWith(".md"))
+        .map((file) => {
+          const parts = file.split(":").map((part) => he.decode(part));
+          const name = parts.at(-1)?.replace(/\.md$/, "") ?? "";
+
+          return {
+            displayName: name,
+            r2Path: file,
+            filePath: file
+              .split(":")
+              .map((part) => he.decode(part))
+              .join("/"),
+          };
+        });
+
+      for (const [mountId, mount] of Object.entries(mountConfig)) {
+        const entries = {} as Record<string, MountedFile>;
+
+        for (const file of files) {
+          if (file.filePath.startsWith(mount.davPath)) {
+            const relativePath = file.filePath.replace(mount.davPath, "").replace(/^\//, "");
+            const relativeUrl = pathToUrl(relativePath);
+            entries[relativeUrl] = {
+              ...file,
+              relativePath,
+            };
+          }
+        }
+        writeToc(mountId, entries);
+        store.setItem(`${MOUNTS_ENTRY_KEY_PREFIX}${mountId}`, JSON.stringify(entries));
+      }
+      
+      const now = Date.now();
+      store.setItem(LAST_FETCH_KEY, now);
+
+      return { result: null };
+    } finally {
+      fetchInProgress = false;
+    }
   },
 });
 
@@ -75,7 +95,11 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
       currentParts.push(part);
       let nextLevel = currentLevel.find((x) => x.name === part);
       if (!nextLevel) {
-        nextLevel = { name: part, url: `/md/${mountId}/${pathToUrl(currentParts.join("/"))}`, children: [] };
+        nextLevel = {
+          name: part,
+          url: `/md/${mountId}/${pathToUrl(currentParts.join("/"))}`,
+          children: [],
+        };
         currentLevel.push(nextLevel);
       } else {
         if (!nextLevel.children) {
@@ -94,4 +118,3 @@ function writeToc(mountId: string, entries: Record<string, MountedFile>) {
   store.setItem(`${MOUNTS_TOC_KEY_PREFIX}${mountId}`, JSON.stringify(toc));
   console.log(`Wrote TOC for mount '${mountId}' with ${Object.keys(entries).length} entries`);
 }
-
